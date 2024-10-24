@@ -1,0 +1,133 @@
+<!-- templates/home.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Pizza Ordering</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <header>
+        <h1>Pizza Ordering System</h1>
+    </header>
+
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        {% if 'customer_id' in session %}
+            <a href="{{ url_for('orders') }}">Orders</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <span>Welcome, {{ session['customer_name'] }}!</span>
+        {% else %}
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert success">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <h2>Menu</h2>
+
+        <form action="{{ url_for('place_order_route') }}" method="post">
+            <div class="product-section">
+                <h3>Pizzas</h3>
+                {% for pizza in pizzas %}
+                    <div class="product-item">
+                        <h3>{{ pizza.Name }}</h3>
+                        <p>{{ pizza.Description }}</p>
+                        <p><strong>Price:</strong> ${{ pizza.Price }}</p>
+                        
+                        <!-- Vegan and Vegetarian checkboxes -->
+                        <div class="pizza-options">
+                            <label for="is_vegan_{{ pizza.ItemID }}">
+                                <input type="checkbox" id="is_vegan_{{ pizza.ItemID }}" disabled {% if pizza.IsVegan %}checked{% endif %}>
+                                Vegan
+                            </label>
+                            <label for="is_vegetarian_{{ pizza.ItemID }}">
+                                <input type="checkbox" id="is_vegetarian_{{ pizza.ItemID }}" disabled {% if pizza.IsVegetarian %}checked{% endif %}>
+                                Vegetarian
+                            </label>
+                        </div>
+            
+                        <label for="quantity_pizza_{{ pizza.ItemID }}">Quantity:</label>
+                        <input type="number" name="quantity_pizza_{{ pizza.ItemID }}" id="quantity_pizza_{{ pizza.ItemID }}" min="0" value="0">
+                    </div>
+                {% endfor %}
+            </div>
+            
+
+            <div class="product-section">
+                <h3>Drinks</h3>
+                {% for drink in drinks %}
+                    <div class="product-item">
+                        <h3>{{ drink.Name }}</h3>
+                        <p><strong>Price:</strong> ${{ drink.Price }}</p>
+                        <label for="quantity_drink_{{ drink.ItemID }}">Quantity:</label>
+                        <input type="number" name="quantity_drink_{{ drink.ItemID }}" id="quantity_drink_{{ drink.ItemID }}" min="0" value="0">
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="product-section">
+                <h3>Desserts</h3>
+                {% for dessert in desserts %}
+                    <div class="product-item">
+                        <h3>{{ dessert.Name }}</h3>
+                        <p><strong>Price:</strong> ${{ dessert.Price }}</p>
+                        <label for="quantity_dessert_{{ dessert.ItemID }}">Quantity:</label>
+                        <input type="number" name="quantity_dessert_{{ dessert.ItemID }}" id="quantity_dessert_{{ dessert.ItemID }}" min="0" value="0">
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Discount Code Section -->
+            <div class="discount-section">
+                <label for="discount_code">Discount Code:</label>
+                <input type="text" id="discount_code" name="discount_code" />
+                <button type="button" id="apply_discount">Apply</button>
+                <span id="discount_message"></span>
+            </div>
+
+            <button type="submit">Place Order</button>
+        </form>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Skibidi Pizza Ordering System</p>
+    </footer>
+
+    <!-- JavaScript for handling discount code application -->
+    <script>
+    document.getElementById('apply_discount').addEventListener('click', function() {
+        var discountCode = document.getElementById('discount_code').value;
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{{ url_for("apply_discount") }}', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                var messageSpan = document.getElementById('discount_message');
+                if (response.valid) {
+                    messageSpan.textContent = 'Discount applied!';
+                } else {
+                    messageSpan.textContent = 'Invalid discount code.';
+                }
+            } else {
+                alert('An error occurred while applying the discount code.');
+            }
+        };
+        xhr.send('discount_code=' + encodeURIComponent(discountCode));
+    });
+    </script>
+</body>
+</html>
